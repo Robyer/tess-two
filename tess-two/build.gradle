@@ -24,38 +24,15 @@ android {
             manifest.srcFile 'AndroidManifest.xml'
             java.srcDirs = ['src']
             res.srcDirs = ['res']
-            jni.srcDirs = []
+            jni.srcDirs = ['jni']
             jniLibs.srcDirs = ['libs']
         }
     }
 
-    // Call external ndk-build(.cmd) script to build the native code
-    task ndkBuild(type: Exec) {
-        def ndkDirProperty = properties.getProperty('ndk.dir')
-        def ndkDirPrefix = ndkDirProperty != null ? ndkDirProperty + '/' : ''
-
-        def ndkBuildExt = Os.isFamily(Os.FAMILY_WINDOWS) ? ".cmd" : ""
-
-        commandLine "${ndkDirPrefix}ndk-build${ndkBuildExt}", '-C', file('.').absolutePath,
-				'-j', Runtime.runtime.availableProcessors()
-    }
-
-    tasks.withType(JavaCompile) {
-        compileTask -> compileTask.dependsOn ndkBuild
-    }
-
-    // Cleanup task to remove previously generated binaries
-    task ndkClean(type: Exec) {
-        def ndkDirProperty = properties.getProperty('ndk.dir')
-        def ndkDirPrefix = ndkDirProperty != null ? ndkDirProperty + '/' : ''
-
-        def ndkBuildExt = Os.isFamily(Os.FAMILY_WINDOWS) ? ".cmd" : ""
-
-        commandLine "${ndkDirPrefix}ndk-build${ndkBuildExt}", '-C', file('.').absolutePath, 'clean'
-    }
-
-    tasks.withType(Delete) {
-        cleanTask -> cleanTask.dependsOn ndkClean
+    externalNativeBuild {
+        ndkBuild {
+            path file('jni/Android.mk')
+        }
     }
 }
 
